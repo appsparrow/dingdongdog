@@ -28,9 +28,16 @@ interface Activity {
   created_at: string;
 }
 
+interface Schedule {
+  feeding_instruction: string;
+  walking_instruction: string;
+  letout_instruction: string;
+}
+
 const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => void }) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -65,6 +72,15 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
       
       setProfiles(profilesData || []);
 
+      // Fetch schedule
+      const { data: scheduleData } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('session_code', profile.session_code)
+        .single();
+      
+      setSchedule(scheduleData);
+
       // Fetch today's activities
       const { data: activitiesData } = await supabase
         .from('activities')
@@ -95,7 +111,7 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
     setConfirmDialog({ open: true, actionType: type });
   };
 
-  const handleConfirmAction = async (caretakerId: string, notes?: string) => {
+  const handleConfirmAction = async (caretakerId: string, timePeriod: string, date: string, notes?: string) => {
     if (!confirmDialog.actionType) return;
 
     try {
@@ -104,8 +120,8 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
         .from('activities')
         .insert({
           type: confirmDialog.actionType,
-          time_period: 'morning', // We'll simplify this for now
-          date: today,
+          time_period: timePeriod,
+          date: date,
           caretaker_id: caretakerId,
           notes
         });
@@ -117,7 +133,7 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
       // Show success notification
       toast({
         title: "Activity Recorded",
-        description: `${caretaker?.name} recorded: ${confirmDialog.actionType}`,
+        description: `${caretaker?.name} recorded: ${confirmDialog.actionType} (${timePeriod})`,
         variant: "default"
       });
 
@@ -178,6 +194,7 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
           onConfirm={handleConfirmAction}
           actionType={confirmDialog.actionType}
           profiles={profiles}
+          schedule={schedule}
         />
       </div>
     </div>
