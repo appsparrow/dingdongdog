@@ -62,11 +62,21 @@ const Index = () => {
         .eq('date', today)
         .order('created_at', { ascending: false });
       
-      setActivities(activitiesData || []);
+      // Type the activities data properly
+      const typedActivities: Activity[] = (activitiesData || []).map(activity => ({
+        id: activity.id,
+        type: activity.type as 'feed' | 'walk' | 'letout',
+        time_period: activity.time_period as 'morning' | 'afternoon' | 'evening',
+        caretaker_id: activity.caretaker_id,
+        date: activity.date,
+        created_at: activity.created_at
+      }));
+      
+      setActivities(typedActivities);
 
       // Build completed activities map
       const completed: { [key: string]: boolean } = {};
-      activitiesData?.forEach(activity => {
+      typedActivities.forEach(activity => {
         const key = `${activity.type}-${activity.time_period}-${activity.caretaker_id}`;
         completed[key] = true;
       });
