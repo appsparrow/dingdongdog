@@ -2,13 +2,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Utensils, MapPin, Home } from 'lucide-react';
-import { Activity } from '@/pages/Index';
+import { Activity, Person } from '@/pages/Index';
 
 interface ActivityLogProps {
   activities: Activity[];
+  people: Person[];
 }
 
-const ActivityLog = ({ activities }: ActivityLogProps) => {
+const ActivityLog = ({ activities, people }: ActivityLogProps) => {
   const getIcon = (type: string) => {
     switch (type) {
       case 'feed': return Utensils;
@@ -108,37 +109,46 @@ const ActivityLog = ({ activities }: ActivityLogProps) => {
                     <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent flex-1"></div>
                   </div>
                   <div className="space-y-3">
-                    {dayActivities.map((activity) => {
-                      const Icon = getIcon(activity.type);
-                      return (
-                        <div key={activity.id} className="flex items-start gap-4 p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
-                          <div className={`p-3 rounded-2xl ${getTypeColor(activity.type)} shadow-lg`}>
-                            <div className="text-2xl">{getEmoji(activity.type)}</div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="font-bold text-gray-900 text-lg">
-                                {getTypeLabel(activity.type)}
-                              </span>
-                              <Badge variant="secondary" className="text-xs rounded-full bg-white/80 border-purple-200 text-purple-700">
-                                {activity.caretaker}
-                              </Badge>
+                    {dayActivities
+                      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+                      .map((activity) => {
+                        const person = people.find(p => p.id === activity.caretakerId);
+                        return (
+                          <div key={activity.id} className="flex items-start gap-4 p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
+                            <div className={`p-3 rounded-2xl ${getTypeColor(activity.type)} shadow-lg`}>
+                              <div className="text-2xl">{getEmoji(activity.type)}</div>
                             </div>
-                            <p className="text-sm text-gray-600 font-medium">
-                              {activity.timestamp.toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </p>
-                            {activity.notes && (
-                              <p className="text-sm text-gray-500 mt-2 p-2 bg-white/60 rounded-xl">
-                                {activity.notes}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="font-bold text-gray-900 text-lg">
+                                  {getTypeLabel(activity.type)}
+                                </span>
+                                {person && (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold">
+                                      {person.shortName}
+                                    </div>
+                                    <Badge variant="secondary" className="text-xs rounded-full bg-white/80 border-purple-200 text-purple-700">
+                                      {person.name.split(' ')[0]}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600 font-medium">
+                                {activity.timestamp.toLocaleTimeString([], { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
                               </p>
-                            )}
+                              {activity.notes && (
+                                <p className="text-sm text-gray-500 mt-2 p-2 bg-white/60 rounded-xl">
+                                  {activity.notes}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 </div>
               ))}

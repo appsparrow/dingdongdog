@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dog, Clock, MapPin, Settings, Plus } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import ActionButtons from '@/components/ActionButtons';
 import ActivityLog from '@/components/ActivityLog';
 import SetupScreen from '@/components/SetupScreen';
@@ -15,12 +15,22 @@ export interface Activity {
   type: 'feed' | 'walk' | 'letout';
   timestamp: Date;
   caretaker: string;
+  caretakerId?: string;
   notes?: string;
+}
+
+export interface Person {
+  id: string;
+  name: string;
+  shortName: string;
+  avatar: string;
 }
 
 export interface Schedule {
   feedTimes: string[];
   walkTimes: string[];
+  letoutCount: number;
+  people: Person[];
   instructions: {
     feeding: string;
     walking: string;
@@ -33,6 +43,11 @@ const Index = () => {
   const [schedule, setSchedule] = useState<Schedule>({
     feedTimes: ['08:00', '18:00'],
     walkTimes: ['07:00', '12:00', '19:00'],
+    letoutCount: 3,
+    people: [
+      { id: '1', name: 'John Doe', shortName: 'JD', avatar: '/lovable-uploads/cf8d0ed7-995b-40a8-810e-fced7ed586ee.png' },
+      { id: '2', name: 'Jane Smith', shortName: 'JS', avatar: '/lovable-uploads/029f3257-eb87-41b5-99bd-74cb8a353960.png' }
+    ],
     instructions: {
       feeding: 'Give 1 cup of kibble with treats',
       walking: 'Walk around the block for 15-20 minutes',
@@ -42,12 +57,16 @@ const Index = () => {
   const [showSetup, setShowSetup] = useState(false);
   const { toast } = useToast();
 
-  const addActivity = (type: 'feed' | 'walk' | 'letout', caretaker: string, notes?: string) => {
+  const addActivity = (type: 'feed' | 'walk' | 'letout', caretakerId: string, notes?: string) => {
+    const person = schedule.people.find(p => p.id === caretakerId);
+    if (!person) return;
+    
     const newActivity: Activity = {
       id: Date.now().toString(),
       type,
       timestamp: new Date(),
-      caretaker,
+      caretaker: person.name,
+      caretakerId,
       notes
     };
     
@@ -61,7 +80,7 @@ const Index = () => {
     
     toast({
       title: `${actionNames[type]} ✓`,
-      description: `Logged by ${caretaker}`,
+      description: `Logged by ${person.name}`,
     });
   };
 
@@ -79,9 +98,17 @@ const Index = () => {
       }
     }
     
-    // If no more times today, show first time tomorrow
     const [hours, minutes] = times[0].split(':');
     return `${hours}:${minutes} (tomorrow)`;
+  };
+
+  const getTodaysActivities = () => {
+    const today = new Date().toDateString();
+    return activities.filter(activity => activity.timestamp.toDateString() === today);
+  };
+
+  const getCompletedCount = (type: 'feed' | 'walk' | 'letout') => {
+    return getTodaysActivities().filter(activity => activity.type === type).length;
   };
 
   if (showSetup) {
@@ -145,16 +172,67 @@ const Index = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl">
-                  <span className="text-sm font-medium text-gray-700">🍽️ Feed:</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700">Fed</span>
+                    <div className="flex gap-1">
+                      {schedule.feedTimes.map((_, index) => (
+                        <div
+                          key={index}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                            index < getCompletedCount('feed') 
+                              ? 'bg-green-500 text-white' 
+                              : 'bg-gray-200 text-gray-400'
+                          }`}
+                        >
+                          🍽️
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <Badge variant="outline" className="rounded-full bg-white/80 border-green-200 text-green-700">
                     {getNextScheduledTime(schedule.feedTimes)}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-sky-50 rounded-2xl">
-                  <span className="text-sm font-medium text-gray-700">🚶 Walk:</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700">Walked</span>
+                    <div className="flex gap-1">
+                      {schedule.walkTimes.map((_, index) => (
+                        <div
+                          key={index}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                            index < getCompletedCount('walk') 
+                              ? 'bg-blue-500 text-white' 
+                              : 'bg-gray-200 text-gray-400'
+                          }`}
+                        >
+                          🚶
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   <Badge variant="outline" className="rounded-full bg-white/80 border-blue-200 text-blue-700">
                     {getNextScheduledTime(schedule.walkTimes)}
                   </Badge>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700">Let Out</span>
+                    <div className="flex gap-1">
+                      {Array.from({ length: schedule.letoutCount }).map((_, index) => (
+                        <div
+                          key={index}
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                            index < getCompletedCount('letout') 
+                              ? 'bg-orange-500 text-white' 
+                              : 'bg-gray-200 text-gray-400'
+                          }`}
+                        >
+                          🏠
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -166,34 +244,44 @@ const Index = () => {
             <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
               <CardHeader>
                 <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  Recent Activity
+                  Today's Activity
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {activities.length === 0 ? (
+                {getTodaysActivities().length === 0 ? (
                   <div className="text-center py-8">
                     <div className="text-6xl mb-4">🐕</div>
-                    <p className="text-gray-500">No activities logged yet</p>
+                    <p className="text-gray-500">No activities logged today</p>
                     <p className="text-sm text-gray-400 mt-1">Start by marking some activities!</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {activities.slice(0, 3).map((activity) => (
-                      <div key={activity.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
-                        <div className="flex items-center gap-3">
-                          <div className="text-2xl">
-                            {activity.type === 'feed' ? '🍽️' : activity.type === 'walk' ? '🚶' : '🏠'}
+                    {getTodaysActivities().slice(0, 3).map((activity) => {
+                      const person = schedule.people.find(p => p.id === activity.caretakerId);
+                      return (
+                        <div key={activity.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">
+                              {activity.type === 'feed' ? '🍽️' : activity.type === 'walk' ? '🚶' : '🏠'}
+                            </div>
+                            <span className="font-medium capitalize text-gray-700">{activity.type}</span>
                           </div>
-                          <span className="font-medium capitalize text-gray-700">{activity.type}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500 font-medium">
+                              {activity.timestamp.toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
+                            {person && (
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold">
+                                {person.shortName}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-sm text-gray-500 font-medium">
-                          {activity.timestamp.toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -201,7 +289,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="log">
-            <ActivityLog activities={activities} />
+            <ActivityLog activities={activities} people={schedule.people} />
           </TabsContent>
         </Tabs>
       </div>
