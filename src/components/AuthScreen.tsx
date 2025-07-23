@@ -21,16 +21,16 @@ interface AuthScreenProps {
 }
 
 const AuthScreen = ({ onLogin }: AuthScreenProps) => {
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async () => {
-    if (!name.trim() || !code.trim()) {
+    if (!email.trim() || !password.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please enter both name and session code",
+        description: "Please enter both email and password",
         variant: "destructive"
       });
       return;
@@ -38,51 +38,41 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
 
     setIsLoading(true);
     try {
-      // Find profile by name and session code
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('name', name.trim())
-        .eq('session_code', code.trim())
-        .single();
+      // Sign in with email and password
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim()
+      });
 
-      if (error || !profiles) {
+      if (authError) {
         toast({
           title: "Login Failed",
-          description: "No matching caretaker found. Please check your name and session code.",
+          description: authError.message,
           variant: "destructive"
         });
         return;
       }
 
-      // Sign in with Supabase Auth using the profile ID
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: `${profiles.id}@dingdongdog.local`,
-        password: profiles.session_code
-      });
+      if (authData.user) {
+        // Check if profile exists for this user
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
 
-      if (authError) {
-        // If auth fails, create the auth user
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: `${profiles.id}@dingdongdog.local`,
-          password: profiles.session_code,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              name: profiles.name,
-              short_name: profiles.short_name,
-              session_code: profiles.session_code,
-              is_admin: profiles.is_admin
-            }
-          }
-        });
-
-        if (signUpError) {
-          throw signUpError;
+        if (profileError || !profile) {
+          toast({
+            title: "Profile Not Found",
+            description: "No profile found for this user. Please contact an administrator.",
+            variant: "destructive"
+          });
+          await supabase.auth.signOut();
+          return;
         }
-      }
 
-      onLogin(profiles);
+        onLogin(profile);
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -107,35 +97,34 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             DingDongDog
           </CardTitle>
-          <p className="text-gray-500 mt-2">Enter your caretaker details</p>
+          <p className="text-gray-500 mt-2">Login to your account</p>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-              Your Name
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              Email
             </Label>
             <Input
-              id="name"
-              type="text"
-              placeholder="Enter your full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="rounded-2xl border-2 focus:border-purple-300 transition-all duration-200"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="code" className="text-sm font-medium text-gray-700">
-              Session Code
+            <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              Password
             </Label>
             <Input
-              id="code"
-              type="text"
-              placeholder="Enter 4-digit session code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="rounded-2xl border-2 focus:border-purple-300 transition-all duration-200"
-              maxLength={4}
             />
           </div>
 
