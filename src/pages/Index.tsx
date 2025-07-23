@@ -1,297 +1,205 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dog, Clock, MapPin, Settings, Plus } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import ActionButtons from '@/components/ActionButtons';
-import ActivityLog from '@/components/ActivityLog';
-import SetupScreen from '@/components/SetupScreen';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { CheckCheck, Clock, Users } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import TimeOfDayActions from '@/components/TimeOfDayActions';
 
-export interface Activity {
-  id: string;
-  type: 'feed' | 'walk' | 'letout';
-  timestamp: Date;
-  caretaker: string;
-  caretakerId?: string;
-  notes?: string;
-}
-
-export interface Person {
+interface Profile {
   id: string;
   name: string;
-  shortName: string;
-  avatar: string;
+  short_name: string;
+  session_code: string;
+  is_admin: boolean;
+  phone_number?: string;
 }
 
-export interface Schedule {
-  feedTimes: string[];
-  walkTimes: string[];
-  letoutCount: number;
-  people: Person[];
-  instructions: {
-    feeding: string;
-    walking: string;
-    letout: string;
-  };
+interface Activity {
+  id: string;
+  type: 'feed' | 'walk' | 'letout';
+  time_period: 'morning' | 'afternoon' | 'evening';
+  date: string;
+  caretaker_id: string;
+  notes?: string;
+  created_at: string;
 }
 
-const Index = () => {
+const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => void }) => {
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [schedule, setSchedule] = useState<Schedule>({
-    feedTimes: ['08:00', '18:00'],
-    walkTimes: ['07:00', '12:00', '19:00'],
-    letoutCount: 3,
-    people: [
-      { id: '1', name: 'John Doe', shortName: 'JD', avatar: '/lovable-uploads/cf8d0ed7-995b-40a8-810e-fced7ed586ee.png' },
-      { id: '2', name: 'Jane Smith', shortName: 'JS', avatar: '/lovable-uploads/029f3257-eb87-41b5-99bd-74cb8a353960.png' }
-    ],
-    instructions: {
-      feeding: 'Give 1 cup of kibble with treats',
-      walking: 'Walk around the block for 15-20 minutes',
-      letout: 'Let out for 5-10 minutes in the backyard'
+  const [completedActivities, setCompletedActivities] = useState<{ [key: string]: boolean }>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const today = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    // Set document title for PWA
+    document.title = 'DingDongDog - Pet Care Tracker';
+    
+    // Add viewport meta tag for mobile
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
     }
-  });
-  const [showSetup, setShowSetup] = useState(false);
-  const { toast } = useToast();
+  }, []);
 
-  const addActivity = (type: 'feed' | 'walk' | 'letout', caretakerId: string, notes?: string) => {
-    const person = schedule.people.find(p => p.id === caretakerId);
-    if (!person) return;
-    
-    const newActivity: Activity = {
-      id: Date.now().toString(),
-      type,
-      timestamp: new Date(),
-      caretaker: person.name,
-      caretakerId,
-      notes
-    };
-    
-    setActivities(prev => [newActivity, ...prev]);
-    
-    const actionNames = {
-      feed: 'Fed',
-      walk: 'Walked',
-      letout: 'Let out'
-    };
-    
-    toast({
-      title: `${actionNames[type]} ✓`,
-      description: `Logged by ${person.name}`,
-    });
-  };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const getNextScheduledTime = (times: string[]) => {
-    const now = new Date();
-    const today = now.toDateString();
-    
-    for (const time of times) {
-      const [hours, minutes] = time.split(':');
-      const scheduledTime = new Date();
-      scheduledTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch profiles
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('session_code', profile.session_code);
       
-      if (scheduledTime > now) {
-        return scheduledTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      }
+      setProfiles(profilesData || []);
+
+      // Fetch today's activities
+      const { data: activitiesData } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('date', today)
+        .order('created_at', { ascending: false });
+      
+      // Type the activities data properly
+      const typedActivities: Activity[] = (activitiesData || []).map(activity => ({
+        id: activity.id,
+        type: activity.type as 'feed' | 'walk' | 'letout',
+        time_period: activity.time_period as 'morning' | 'afternoon' | 'evening',
+        date: activity.date,
+        caretaker_id: activity.caretaker_id,
+        notes: activity.notes,
+        created_at: activity.created_at
+      }));
+      
+      setActivities(typedActivities);
+
+      // Update completed activities state
+      const completed: { [key: string]: boolean } = {};
+      typedActivities.forEach(activity => {
+        completed[`${activity.type}-${activity.time_period}-${activity.caretaker_id}`] = true;
+      });
+      setCompletedActivities(completed);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    const [hours, minutes] = times[0].split(':');
-    return `${hours}:${minutes} (tomorrow)`;
   };
 
-  const getTodaysActivities = () => {
-    const today = new Date().toDateString();
-    return activities.filter(activity => activity.timestamp.toDateString() === today);
-  };
+  const handleAction = async (type: 'feed' | 'walk' | 'letout', timePeriod: 'morning' | 'afternoon' | 'evening', caretakerId: string) => {
+    try {
+      // Insert activity
+      const { error } = await supabase
+        .from('activities')
+        .insert({
+          type,
+          time_period: timePeriod,
+          date: today,
+          caretaker_id: caretakerId
+        });
 
-  const getCompletedCount = (type: 'feed' | 'walk' | 'letout') => {
-    return getTodaysActivities().filter(activity => activity.type === type).length;
-  };
+      if (error) throw error;
 
-  if (showSetup) {
-    return (
-      <SetupScreen 
-        schedule={schedule} 
-        onSave={setSchedule} 
-        onClose={() => setShowSetup(false)} 
-      />
-    );
-  }
+      // Optimistically update UI
+      setActivities(prevActivities => [
+        {
+          id: 'temp-' + Math.random(), // Temporary ID
+          type,
+          time_period: timePeriod,
+          date: today,
+          caretaker_id: caretakerId,
+          created_at: new Date().toISOString()
+        },
+        ...prevActivities
+      ]);
+
+      setCompletedActivities(prev => ({
+        ...prev,
+        [`${type}-${timePeriod}-${caretakerId}`]: true
+      }));
+    } catch (error) {
+      console.error('Error inserting activity:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50">
       <div className="max-w-md mx-auto p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 pt-8">
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-2xl shadow-lg">
-              <Dog className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                PupCare
-              </h1>
-              <p className="text-sm text-gray-500">Keep your pup happy</p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setShowSetup(true)}
-            className="rounded-2xl border-2 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-        </div>
-
-        <Tabs defaultValue="actions" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-1 shadow-lg">
-            <TabsTrigger value="actions" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">
-              <Plus className="h-4 w-4" />
-              Actions
-            </TabsTrigger>
-            <TabsTrigger value="log" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">
-              <Clock className="h-4 w-4" />
-              Log
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="actions" className="space-y-6">
-            {/* Schedule Overview */}
-            <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-xl">
-                    <Clock className="h-5 w-5 text-white" />
-                  </div>
-                  Next Scheduled
+        <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0 mb-6">
+          <CardHeader className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Avatar>
+                <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                <AvatarFallback>{profile.short_name}</AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <CardTitle className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  {profile.name}
                 </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700">Fed</span>
-                    <div className="flex gap-1">
-                      {schedule.feedTimes.map((_, index) => (
-                        <div
-                          key={index}
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                            index < getCompletedCount('feed') 
-                              ? 'bg-green-500 text-white' 
-                              : 'bg-gray-200 text-gray-400'
-                          }`}
-                        >
-                          🍽️
-                        </div>
-                      ))}
+                <p className="text-gray-500">Caretaker</p>
+              </div>
+            </div>
+            <Button onClick={onShowSetup} variant="outline" size="sm" className="rounded-2xl border-2 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200">
+              Settings
+            </Button>
+          </CardHeader>
+        </Card>
+
+        {/* Today's Activities */}
+        <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0 mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <Clock className="h-6 w-6 text-blue-500" />
+              Today's Activities
+            </CardTitle>
+            <p className="text-gray-500">What's been done today</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {activities.length === 0 ? (
+              <p className="text-center text-gray-500">No activities yet today.</p>
+            ) : (
+              activities.map((activity) => {
+                const caretaker = profiles.find(p => p.id === activity.caretaker_id);
+                return (
+                  <div key={activity.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
+                    <div>
+                      <p className="font-medium text-gray-700">{activity.type}</p>
+                      <p className="text-sm text-gray-500">{activity.time_period}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
+                        {caretaker?.short_name || '?'}
+                      </div>
+                      <Badge variant="secondary" className="bg-green-100 text-green-600 border-0">
+                        <CheckCheck className="h-3 w-3 mr-1" />
+                        Done
+                      </Badge>
                     </div>
                   </div>
-                  <Badge variant="outline" className="rounded-full bg-white/80 border-green-200 text-green-700">
-                    {getNextScheduledTime(schedule.feedTimes)}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-sky-50 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700">Walked</span>
-                    <div className="flex gap-1">
-                      {schedule.walkTimes.map((_, index) => (
-                        <div
-                          key={index}
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                            index < getCompletedCount('walk') 
-                              ? 'bg-blue-500 text-white' 
-                              : 'bg-gray-200 text-gray-400'
-                          }`}
-                        >
-                          🚶
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="rounded-full bg-white/80 border-blue-200 text-blue-700">
-                    {getNextScheduledTime(schedule.walkTimes)}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700">Let Out</span>
-                    <div className="flex gap-1">
-                      {Array.from({ length: schedule.letoutCount }).map((_, index) => (
-                        <div
-                          key={index}
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                            index < getCompletedCount('letout') 
-                              ? 'bg-orange-500 text-white' 
-                              : 'bg-gray-200 text-gray-400'
-                          }`}
-                        >
-                          🏠
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
 
-            {/* Action Buttons */}
-            <ActionButtons onAction={addActivity} schedule={schedule} />
-
-            {/* Recent Activity Summary */}
-            <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
-              <CardHeader>
-                <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                  Today's Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {getTodaysActivities().length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-6xl mb-4">🐕</div>
-                    <p className="text-gray-500">No activities logged today</p>
-                    <p className="text-sm text-gray-400 mt-1">Start by marking some activities!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {getTodaysActivities().slice(0, 3).map((activity) => {
-                      const person = schedule.people.find(p => p.id === activity.caretakerId);
-                      return (
-                        <div key={activity.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
-                          <div className="flex items-center gap-3">
-                            <div className="text-2xl">
-                              {activity.type === 'feed' ? '🍽️' : activity.type === 'walk' ? '🚶' : '🏠'}
-                            </div>
-                            <span className="font-medium capitalize text-gray-700">{activity.type}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500 font-medium">
-                              {activity.timestamp.toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </span>
-                            {person && (
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold">
-                                {person.shortName}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="log">
-            <ActivityLog activities={activities} people={schedule.people} />
-          </TabsContent>
-        </Tabs>
+        {/* Time of Day Actions */}
+        {isLoading ? (
+          <div className="text-center text-gray-500">Loading...</div>
+        ) : (
+          <TimeOfDayActions
+            profiles={profiles}
+            onAction={handleAction}
+            completedActivities={completedActivities}
+          />
+        )}
       </div>
     </div>
   );

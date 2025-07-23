@@ -14,13 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          caretaker_id: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          time_period: string
+          type: string
+        }
+        Insert: {
+          caretaker_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          time_period: string
+          type: string
+        }
+        Update: {
+          caretaker_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          time_period?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_caretaker_id_fkey"
+            columns: ["caretaker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          is_admin: boolean | null
+          name: string
+          phone_number: string | null
+          session_code: string
+          short_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean | null
+          name: string
+          phone_number?: string | null
+          session_code: string
+          short_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_admin?: boolean | null
+          name?: string
+          phone_number?: string | null
+          session_code?: string
+          short_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      schedules: {
+        Row: {
+          created_at: string
+          feeding_instruction: string | null
+          id: string
+          letout_count: number | null
+          letout_instruction: string | null
+          session_code: string
+          updated_at: string
+          walking_instruction: string | null
+        }
+        Insert: {
+          created_at?: string
+          feeding_instruction?: string | null
+          id?: string
+          letout_count?: number | null
+          letout_instruction?: string | null
+          session_code: string
+          updated_at?: string
+          walking_instruction?: string | null
+        }
+        Update: {
+          created_at?: string
+          feeding_instruction?: string | null
+          id?: string
+          letout_count?: number | null
+          letout_instruction?: string | null
+          session_code?: string
+          updated_at?: string
+          walking_instruction?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_session_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
