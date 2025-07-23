@@ -21,6 +21,8 @@ export const useAuth = () => {
   const fetchProfile = async (userId: string) => {
     try {
       console.log('Fetching profile for user:', userId);
+      
+      // First, try to get the profile directly by user ID
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
@@ -29,10 +31,37 @@ export const useAuth = () => {
       
       if (error) {
         console.error('Error fetching profile:', error);
-        // If no profile exists, create a default one
+        
+        // If profile doesn't exist, create one for the authenticated user
         if (error.code === 'PGRST116') {
-          console.log('No profile found, user needs to be linked to a profile');
-          return null;
+          console.log('No profile found for user, creating default profile');
+          
+          // Get user metadata for profile creation
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          
+          if (authUser) {
+            const newProfile = {
+              id: userId,
+              name: authUser.email?.split('@')[0] || 'User',
+              short_name: (authUser.email?.split('@')[0] || 'U').substring(0, 2).toUpperCase(),
+              session_code: 'DEFAULT',
+              is_admin: authUser.email === 'kiran@dingdongdog.com'
+            };
+            
+            const { data: createdProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert(newProfile)
+              .select()
+              .single();
+            
+            if (createError) {
+              console.error('Error creating profile:', createError);
+              return null;
+            }
+            
+            console.log('Profile created successfully:', createdProfile);
+            return createdProfile;
+          }
         }
         return null;
       } else {
@@ -54,16 +83,12 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to prevent potential infinite recursion
-          setTimeout(async () => {
-            const profileData = await fetchProfile(session.user.id);
-            setProfile(profileData);
-            setIsLoading(false);
-          }, 0);
+          const profileData = await fetchProfile(session.user.id);
+          setProfile(profileData);
         } else {
           setProfile(null);
-          setIsLoading(false);
         }
+        setIsLoading(false);
       }
     );
 
