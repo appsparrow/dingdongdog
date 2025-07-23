@@ -1,82 +1,27 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
 
-import { useState, useEffect } from 'react';
-import { Toaster } from '@/components/ui/toaster';
-import { useAuth } from '@/hooks/useAuth';
-import { usePWA } from '@/hooks/usePWA';
-import AuthScreen from '@/components/AuthScreen';
-import SetupScreen from '@/components/SetupScreen';
-import PWAInstallPrompt from '@/components/PWAInstallPrompt';
-import Index from '@/pages/Index';
-import './App.css';
+const queryClient = new QueryClient();
 
-function App() {
-  const { user, profile, isLoading } = useAuth();
-  const [showSetup, setShowSetup] = useState(false);
-  
-  // Initialize PWA functionality
-  usePWA();
-
-  useEffect(() => {
-    // Add manifest link to head
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = '/manifest.json';
-    document.head.appendChild(link);
-
-    // Add theme color meta tag
-    const themeColor = document.createElement('meta');
-    themeColor.name = 'theme-color';
-    themeColor.content = '#8b5cf6';
-    document.head.appendChild(themeColor);
-
-    return () => {
-      if (document.head.contains(link)) document.head.removeChild(link);
-      if (document.head.contains(themeColor)) document.head.removeChild(themeColor);
-    };
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
-      </div>
-    );
-  }
-
-  // Show auth screen if no user or no profile
-  if (!user || !profile) {
-    return (
-      <>
-        <AuthScreen onLogin={() => {}} />
-        <PWAInstallPrompt />
-        <Toaster />
-      </>
-    );
-  }
-
-  if (showSetup) {
-    return (
-      <>
-        <SetupScreen 
-          profile={profile} 
-          onClose={() => setShowSetup(false)} 
-        />
-        <PWAInstallPrompt />
-        <Toaster />
-      </>
-    );
-  }
-
-  return (
-    <>
-      <Index 
-        profile={profile} 
-        onShowSetup={() => setShowSetup(true)} 
-      />
-      <PWAInstallPrompt />
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
       <Toaster />
-    </>
-  );
-}
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
