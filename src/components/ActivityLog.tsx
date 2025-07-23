@@ -20,10 +20,10 @@ const ActivityLog = ({ activities }: ActivityLogProps) => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'feed': return 'bg-green-500';
-      case 'walk': return 'bg-blue-500';
-      case 'letout': return 'bg-yellow-500';
-      default: return 'bg-gray-500';
+      case 'feed': return 'bg-gradient-to-r from-green-500 to-emerald-500';
+      case 'walk': return 'bg-gradient-to-r from-blue-500 to-sky-500';
+      case 'letout': return 'bg-gradient-to-r from-orange-500 to-yellow-500';
+      default: return 'bg-gradient-to-r from-gray-500 to-slate-500';
     }
   };
 
@@ -33,6 +33,15 @@ const ActivityLog = ({ activities }: ActivityLogProps) => {
       case 'walk': return 'Walked';
       case 'letout': return 'Let Out';
       default: return type;
+    }
+  };
+
+  const getEmoji = (type: string) => {
+    switch (type) {
+      case 'feed': return '🍽️';
+      case 'walk': return '🚶';
+      case 'letout': return '🏠';
+      default: return '⏰';
     }
   };
 
@@ -67,58 +76,62 @@ const ActivityLog = ({ activities }: ActivityLogProps) => {
   const groupedActivities = groupByDate(activities);
 
   return (
-    <Card>
+    <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-3 text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-xl">
+            <Clock className="h-5 w-5 text-white" />
+          </div>
           Activity Log
         </CardTitle>
       </CardHeader>
       <CardContent>
         {activities.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-gray-400 mb-2">
-              <Clock className="h-12 w-12 mx-auto" />
-            </div>
-            <p className="text-gray-500">No activities logged yet</p>
-            <p className="text-sm text-gray-400 mt-1">
+          <div className="text-center py-12">
+            <div className="text-8xl mb-6">🐕</div>
+            <p className="text-gray-500 text-lg font-medium">No activities logged yet</p>
+            <p className="text-sm text-gray-400 mt-2">
               Use the Actions tab to log feeding, walks, and let-outs
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {Object.entries(groupedActivities)
               .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
               .map(([dateString, dayActivities]) => (
-                <div key={dateString} className="space-y-2">
-                  <h3 className="font-semibold text-gray-700 text-sm">
-                    {formatDate(new Date(dateString))}
-                  </h3>
-                  <div className="space-y-2">
+                <div key={dateString} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent flex-1"></div>
+                    <h3 className="font-bold text-gray-700 bg-gradient-to-r from-purple-100 to-pink-100 px-4 py-2 rounded-full text-sm">
+                      {formatDate(new Date(dateString))}
+                    </h3>
+                    <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent flex-1"></div>
+                  </div>
+                  <div className="space-y-3">
                     {dayActivities.map((activity) => {
                       const Icon = getIcon(activity.type);
                       return (
-                        <div key={activity.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                          <div className={`p-2 rounded-full ${getTypeColor(activity.type)}`}>
-                            <Icon className="h-4 w-4 text-white" />
+                        <div key={activity.id} className="flex items-start gap-4 p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200">
+                          <div className={`p-3 rounded-2xl ${getTypeColor(activity.type)} shadow-lg`}>
+                            <div className="text-2xl">{getEmoji(activity.type)}</div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="font-bold text-gray-900 text-lg">
                                 {getTypeLabel(activity.type)}
                               </span>
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-xs rounded-full bg-white/80 border-purple-200 text-purple-700">
                                 {activity.caretaker}
                               </Badge>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 font-medium">
                               {activity.timestamp.toLocaleTimeString([], { 
                                 hour: '2-digit', 
                                 minute: '2-digit' 
                               })}
                             </p>
                             {activity.notes && (
-                              <p className="text-sm text-gray-500 mt-1">
+                              <p className="text-sm text-gray-500 mt-2 p-2 bg-white/60 rounded-xl">
                                 {activity.notes}
                               </p>
                             )}

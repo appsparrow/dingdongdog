@@ -95,53 +95,66 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      <div className="max-w-md mx-auto p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50">
+      <div className="max-w-md mx-auto p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 pt-8">
-          <div className="flex items-center gap-2">
-            <Dog className="h-8 w-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-800">PupCare</h1>
+        <div className="flex items-center justify-between mb-8 pt-8">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-2xl shadow-lg">
+              <Dog className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                PupCare
+              </h1>
+              <p className="text-sm text-gray-500">Keep your pup happy</p>
+            </div>
           </div>
           <Button
             variant="outline"
             size="icon"
             onClick={() => setShowSetup(true)}
-            className="rounded-full"
+            className="rounded-2xl border-2 hover:border-purple-300 hover:bg-purple-50 transition-all duration-200"
           >
             <Settings className="h-5 w-5" />
           </Button>
         </div>
 
         <Tabs defaultValue="actions" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="actions" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-1 shadow-lg">
+            <TabsTrigger value="actions" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">
               <Plus className="h-4 w-4" />
               Actions
             </TabsTrigger>
-            <TabsTrigger value="log" className="flex items-center gap-2">
+            <TabsTrigger value="log" className="flex items-center gap-2 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">
               <Clock className="h-4 w-4" />
               Log
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="actions" className="space-y-4">
+          <TabsContent value="actions" className="space-y-6">
             {/* Schedule Overview */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Clock className="h-5 w-5" />
+            <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-xl">
+                    <Clock className="h-5 w-5 text-white" />
+                  </div>
                   Next Scheduled
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Feed:</span>
-                  <Badge variant="outline">{getNextScheduledTime(schedule.feedTimes)}</Badge>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl">
+                  <span className="text-sm font-medium text-gray-700">🍽️ Feed:</span>
+                  <Badge variant="outline" className="rounded-full bg-white/80 border-green-200 text-green-700">
+                    {getNextScheduledTime(schedule.feedTimes)}
+                  </Badge>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Walk:</span>
-                  <Badge variant="outline">{getNextScheduledTime(schedule.walkTimes)}</Badge>
+                <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50 to-sky-50 rounded-2xl">
+                  <span className="text-sm font-medium text-gray-700">🚶 Walk:</span>
+                  <Badge variant="outline" className="rounded-full bg-white/80 border-blue-200 text-blue-700">
+                    {getNextScheduledTime(schedule.walkTimes)}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -150,19 +163,30 @@ const Index = () => {
             <ActionButtons onAction={addActivity} schedule={schedule} />
 
             {/* Recent Activity Summary */}
-            <Card>
+            <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
               <CardHeader>
-                <CardTitle className="text-lg">Recent Activity</CardTitle>
+                <CardTitle className="text-xl bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                  Recent Activity
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {activities.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">No activities logged yet</p>
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">🐕</div>
+                    <p className="text-gray-500">No activities logged yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Start by marking some activities!</p>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {activities.slice(0, 3).map((activity) => (
-                      <div key={activity.id} className="flex items-center justify-between text-sm">
-                        <span className="font-medium capitalize">{activity.type}</span>
-                        <span className="text-gray-500">
+                      <div key={activity.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
+                        <div className="flex items-center gap-3">
+                          <div className="text-2xl">
+                            {activity.type === 'feed' ? '🍽️' : activity.type === 'walk' ? '🚶' : '🏠'}
+                          </div>
+                          <span className="font-medium capitalize text-gray-700">{activity.type}</span>
+                        </div>
+                        <span className="text-sm text-gray-500 font-medium">
                           {activity.timestamp.toLocaleTimeString([], { 
                             hour: '2-digit', 
                             minute: '2-digit' 

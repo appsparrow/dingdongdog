@@ -27,64 +27,68 @@ const ActionButtons = ({ onAction, schedule }: ActionButtonsProps) => {
     setOpenDialog(null);
   };
 
-  const ActionDialog = ({ type, icon: Icon, title, instruction }: {
+  const ActionDialog = ({ type, icon: Icon, title, instruction, emoji, gradient }: {
     type: 'feed' | 'walk' | 'letout';
     icon: any;
     title: string;
     instruction: string;
+    emoji: string;
+    gradient: string;
   }) => (
     <Dialog open={openDialog === type} onOpenChange={(open) => setOpenDialog(open ? type : null)}>
       <DialogTrigger asChild>
         <Button
           size="lg"
-          className="h-20 flex-col gap-2 text-white shadow-lg"
-          style={{
-            backgroundColor: type === 'feed' ? '#10b981' : type === 'walk' ? '#3b82f6' : '#f59e0b'
-          }}
+          className={`h-24 flex-col gap-3 text-white shadow-2xl rounded-3xl border-0 ${gradient} hover:scale-105 transition-all duration-300 relative overflow-hidden`}
         >
-          <Icon className="h-6 w-6" />
-          <span className="font-semibold">{title}</span>
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+          <div className="relative z-10 flex flex-col items-center gap-2">
+            <div className="text-3xl">{emoji}</div>
+            <span className="font-bold text-lg">{title}</span>
+          </div>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Icon className="h-5 w-5" />
+      <DialogContent className="sm:max-w-md rounded-3xl border-0 shadow-2xl">
+        <DialogHeader className="text-center">
+          <DialogTitle className="flex items-center justify-center gap-3 text-2xl">
+            <span className="text-3xl">{emoji}</span>
             {title}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-700">{instruction}</p>
+        <div className="space-y-6">
+          <div className="p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
+            <p className="text-sm text-gray-700 leading-relaxed">{instruction}</p>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="caretaker">Your Name</Label>
+            <Label htmlFor="caretaker" className="text-sm font-medium text-gray-700">Your Name</Label>
             <Input
               id="caretaker"
               value={caretaker}
               onChange={(e) => setCaretaker(e.target.value)}
               placeholder="Enter your name"
+              className="rounded-2xl border-2 focus:border-purple-300 transition-all duration-200"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optional)</Label>
+            <Label htmlFor="notes" className="text-sm font-medium text-gray-700">Notes (optional)</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any additional notes..."
-              className="resize-none"
+              className="resize-none rounded-2xl border-2 focus:border-purple-300 transition-all duration-200"
               rows={3}
             />
           </div>
           
           <Button 
             onClick={() => handleAction(type)}
-            className="w-full"
+            className={`w-full h-12 rounded-2xl ${gradient} hover:scale-105 transition-all duration-300 font-bold text-lg shadow-lg`}
             disabled={!caretaker.trim()}
           >
+            <span className="mr-2">{emoji}</span>
             Mark as {title}
           </Button>
         </div>
@@ -93,9 +97,11 @@ const ActionButtons = ({ onAction, schedule }: ActionButtonsProps) => {
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg text-center">Quick Actions</CardTitle>
+    <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
+      <CardHeader className="text-center">
+        <CardTitle className="text-xl bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          Quick Actions
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-4">
@@ -104,18 +110,24 @@ const ActionButtons = ({ onAction, schedule }: ActionButtonsProps) => {
             icon={Utensils}
             title="Fed"
             instruction={schedule.instructions.feeding}
+            emoji="🍽️"
+            gradient="bg-gradient-to-r from-green-500 to-emerald-500"
           />
           <ActionDialog
             type="walk"
             icon={MapPin}
             title="Walked"
             instruction={schedule.instructions.walking}
+            emoji="🚶"
+            gradient="bg-gradient-to-r from-blue-500 to-sky-500"
           />
           <ActionDialog
             type="letout"
             icon={Home}
             title="Let Out"
             instruction={schedule.instructions.letout}
+            emoji="🏠"
+            gradient="bg-gradient-to-r from-orange-500 to-yellow-500"
           />
         </div>
       </CardContent>
