@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock } from 'lucide-react';
+import { Clock, CheckCheck } from 'lucide-react';
 
 interface Activity {
   id: string;
@@ -9,6 +9,7 @@ interface Activity {
   time_period: 'morning' | 'afternoon' | 'evening';
   caretaker_id: string;
   created_at: string;
+  notes?: string;
 }
 
 interface Profile {
@@ -32,18 +33,31 @@ const TodayActivity = ({ activities, profiles }: TodayActivityProps) => {
     }
   };
 
-  const getTimePeriodColor = (timePeriod: string) => {
-    switch (timePeriod) {
-      case 'morning': return 'bg-yellow-100 text-yellow-800';
-      case 'afternoon': return 'bg-blue-100 text-blue-800';
-      case 'evening': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getActivityLabel = (type: string) => {
+    switch (type) {
+      case 'feed': return 'Fed';
+      case 'walk': return 'Walked';
+      case 'letout': return 'Let Out';
+      default: return type;
     }
   };
 
   const getCaretakerName = (caretakerId: string) => {
     const profile = profiles.find(p => p.id === caretakerId);
-    return profile ? profile.short_name : 'Unknown';
+    return profile ? profile.name : 'Unknown';
+  };
+
+  const getCaretakerInitials = (caretakerId: string) => {
+    const profile = profiles.find(p => p.id === caretakerId);
+    return profile ? profile.short_name : '?';
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   return (
@@ -59,22 +73,30 @@ const TodayActivity = ({ activities, profiles }: TodayActivityProps) => {
           <div className="text-center py-8">
             <div className="text-6xl mb-4">🐕</div>
             <p className="text-gray-500">No activities logged today</p>
-            <p className="text-sm text-gray-400 mt-1">Start by selecting activities above!</p>
+            <p className="text-sm text-gray-400 mt-1">Use Quick Actions to record activities!</p>
           </div>
         ) : (
           <div className="space-y-3">
             {activities.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
-                <div className="text-2xl">{getActivityEmoji(activity.type)}</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${getTimePeriodColor(activity.time_period)} rounded-full`}>
-                      {activity.time_period}
-                    </Badge>
-                    <Badge variant="outline" className="rounded-full">
-                      {getCaretakerName(activity.caretaker_id)}
-                    </Badge>
+              <div key={activity.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">{getActivityEmoji(activity.type)}</div>
+                  <div>
+                    <p className="font-medium text-gray-700">{getActivityLabel(activity.type)}</p>
+                    <p className="text-sm text-gray-500">by {getCaretakerName(activity.caretaker_id)}</p>
+                    {activity.notes && (
+                      <p className="text-xs text-gray-400 mt-1">{activity.notes}</p>
+                    )}
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">{formatTime(activity.created_at)}</p>
+                  </div>
+                  <Badge variant="secondary" className="bg-green-100 text-green-600 border-0">
+                    <CheckCheck className="h-3 w-3 mr-1" />
+                    Done
+                  </Badge>
                 </div>
               </div>
             ))}

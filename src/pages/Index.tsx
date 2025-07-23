@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CheckCheck, Clock, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import TimeOfDayActions from '@/components/TimeOfDayActions';
+import { useToast } from '@/hooks/use-toast';
+import NextScheduled from '@/components/NextScheduled';
+import QuickActions from '@/components/QuickActions';
+import ActionConfirmDialog from '@/components/ActionConfirmDialog';
 
 interface Profile {
   id: string;
@@ -30,8 +31,12 @@ interface Activity {
 const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => void }) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [completedActivities, setCompletedActivities] = useState<{ [key: string]: boolean }>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    actionType: 'feed' | 'walk' | 'letout' | null;
+  }>({ open: false, actionType: null });
+  const { toast } = useToast();
   const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
@@ -79,13 +84,6 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
       }));
       
       setActivities(typedActivities);
-
-      // Update completed activities state
-      const completed: { [key: string]: boolean } = {};
-      typedActivities.forEach(activity => {
-        completed[`${activity.type}-${activity.time_period}-${activity.caretaker_id}`] = true;
-      });
-      setCompletedActivities(completed);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -93,39 +91,45 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
     }
   };
 
-  const handleAction = async (type: 'feed' | 'walk' | 'letout', timePeriod: 'morning' | 'afternoon' | 'evening', caretakerId: string) => {
+  const handleQuickAction = (type: 'feed' | 'walk' | 'letout') => {
+    setConfirmDialog({ open: true, actionType: type });
+  };
+
+  const handleConfirmAction = async (caretakerId: string, notes?: string) => {
+    if (!confirmDialog.actionType) return;
+
     try {
       // Insert activity
       const { error } = await supabase
         .from('activities')
         .insert({
-          type,
-          time_period: timePeriod,
+          type: confirmDialog.actionType,
+          time_period: 'morning', // We'll simplify this for now
           date: today,
-          caretaker_id: caretakerId
+          caretaker_id: caretakerId,
+          notes
         });
 
       if (error) throw error;
 
-      // Optimistically update UI
-      setActivities(prevActivities => [
-        {
-          id: 'temp-' + Math.random(), // Temporary ID
-          type,
-          time_period: timePeriod,
-          date: today,
-          caretaker_id: caretakerId,
-          created_at: new Date().toISOString()
-        },
-        ...prevActivities
-      ]);
+      const caretaker = profiles.find(p => p.id === caretakerId);
+      
+      // Show success notification
+      toast({
+        title: "Activity Recorded",
+        description: `${caretaker?.name} recorded: ${confirmDialog.actionType}`,
+        variant: "default"
+      });
 
-      setCompletedActivities(prev => ({
-        ...prev,
-        [`${type}-${timePeriod}-${caretakerId}`]: true
-      }));
+      // Refresh data
+      fetchData();
     } catch (error) {
       console.error('Error inserting activity:', error);
+      toast({
+        title: "Error",
+        description: "Failed to record activity. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -153,53 +157,28 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
           </CardHeader>
         </Card>
 
-        {/* Today's Activities */}
-        <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0 mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              <Clock className="h-6 w-6 text-blue-500" />
-              Today's Activities
-            </CardTitle>
-            <p className="text-gray-500">What's been done today</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {activities.length === 0 ? (
-              <p className="text-center text-gray-500">No activities yet today.</p>
-            ) : (
-              activities.map((activity) => {
-                const caretaker = profiles.find(p => p.id === activity.caretaker_id);
-                return (
-                  <div key={activity.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl">
-                    <div>
-                      <p className="font-medium text-gray-700">{activity.type}</p>
-                      <p className="text-sm text-gray-500">{activity.time_period}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
-                        {caretaker?.short_name || '?'}
-                      </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-600 border-0">
-                        <CheckCheck className="h-3 w-3 mr-1" />
-                        Done
-                      </Badge>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Time of Day Actions */}
+        {/* Next Scheduled */}
         {isLoading ? (
-          <div className="text-center text-gray-500">Loading...</div>
+          <div className="text-center text-gray-500 mb-6">Loading...</div>
         ) : (
-          <TimeOfDayActions
-            profiles={profiles}
-            onAction={handleAction}
-            completedActivities={completedActivities}
-          />
+          <div className="mb-6">
+            <NextScheduled activities={activities} profiles={profiles} />
+          </div>
         )}
+
+        {/* Quick Actions */}
+        {!isLoading && (
+          <QuickActions profiles={profiles} onAction={handleQuickAction} />
+        )}
+
+        {/* Action Confirmation Dialog */}
+        <ActionConfirmDialog
+          open={confirmDialog.open}
+          onClose={() => setConfirmDialog({ open: false, actionType: null })}
+          onConfirm={handleConfirmAction}
+          actionType={confirmDialog.actionType}
+          profiles={profiles}
+        />
       </div>
     </div>
   );
