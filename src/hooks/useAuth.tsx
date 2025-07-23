@@ -32,21 +32,26 @@ export const useAuth = () => {
       if (error) {
         console.error('Error fetching profile:', error);
         
-        // If profile doesn't exist, create one for the authenticated user
+        // If profile doesn't exist, try to create one for the authenticated user
         if (error.code === 'PGRST116') {
-          console.log('No profile found for user, creating default profile');
+          console.log('No profile found for user, attempting to create profile');
           
           // Get user metadata for profile creation
           const { data: { user: authUser } } = await supabase.auth.getUser();
           
           if (authUser) {
+            // Check if this is the admin email
+            const isAdmin = authUser.email === 'kiran@dingdongdog.com';
+            
             const newProfile = {
               id: userId,
-              name: authUser.email?.split('@')[0] || 'User',
-              short_name: (authUser.email?.split('@')[0] || 'U').substring(0, 2).toUpperCase(),
-              session_code: 'DEFAULT',
-              is_admin: authUser.email === 'kiran@dingdongdog.com'
+              name: isAdmin ? 'Kiran' : (authUser.email?.split('@')[0] || 'User'),
+              short_name: isAdmin ? 'KR' : (authUser.email?.split('@')[0] || 'U').substring(0, 2).toUpperCase(),
+              session_code: isAdmin ? '4228' : 'DEFAULT',
+              is_admin: isAdmin
             };
+            
+            console.log('Creating new profile:', newProfile);
             
             const { data: createdProfile, error: createError } = await supabase
               .from('profiles')
