@@ -33,16 +33,6 @@ const ActionButtons = ({ onAction, schedule }: ActionButtonsProps) => {
     return 'evening';
   };
 
-  const getTimePeriodIcon = (period: string) => {
-    switch (period) {
-      case 'morning': return <Sun className="h-4 w-4" />;
-      case 'afternoon': return <CloudSun className="h-4 w-4" />;
-      case 'evening': return <Moon className="h-4 w-4" />;
-      default: return <Sun className="h-4 w-4" />;
-    }
-  };
-
-  const isToday = new Date().toDateString() === new Date().toDateString();
   const currentPeriod = getTimePeriod();
 
   const ActionDialog = ({ type, icon: Icon, title, instruction, emoji, gradient }: {
@@ -63,12 +53,12 @@ const ActionButtons = ({ onAction, schedule }: ActionButtonsProps) => {
       <DialogTrigger asChild>
         <Button
           size="lg"
-          className={`h-24 flex-col gap-3 text-white shadow-2xl rounded-3xl border-0 ${gradient} hover:scale-105 transition-all duration-300 relative overflow-hidden`}
+          className={`${type === 'walk' ? 'h-20 w-20' : 'h-28 w-28'} rounded-full flex-col gap-2 text-white shadow-2xl border-0 ${gradient} hover:scale-105 transition-all duration-300 relative overflow-hidden`}
         >
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-          <div className="relative z-10 flex flex-col items-center gap-2">
-            <div className="text-3xl">{emoji}</div>
-            <span className="font-bold text-lg">{title}</span>
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-full"></div>
+          <div className="relative z-10 flex flex-col items-center gap-1">
+            <div className={`${type === 'walk' ? 'text-2xl' : 'text-3xl'}`}>{emoji}</div>
+            <span className={`font-bold ${type === 'walk' ? 'text-sm' : 'text-base'}`}>{title}</span>
           </div>
         </Button>
       </DialogTrigger>
@@ -84,31 +74,62 @@ const ActionButtons = ({ onAction, schedule }: ActionButtonsProps) => {
             <p className="text-sm text-gray-700 leading-relaxed">{instruction}</p>
           </div>
 
-          {/* Time Period Indicator */}
-          <div className="flex items-center justify-center gap-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-full ${
-                currentPeriod === 'morning' ? 'bg-yellow-200' : 'bg-gray-200'
-              }`}>
+          {/* Date Selection with Today highlighted by default */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-gray-700">When?</Label>
+            <div className="flex gap-3 justify-center">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-2xl border-2 hover:border-purple-300 bg-purple-100 border-purple-300 text-purple-700 font-medium"
+              >
+                Today
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-2xl border-2 hover:border-purple-300 transition-all duration-200"
+              >
+                Yesterday
+              </Button>
+            </div>
+          </div>
+
+          {/* Time Period Indicators with current period highlighted */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-gray-700">Time of day</Label>
+            <div className="flex gap-3 justify-center">
+              <Button
+                variant="outline"
+                className={`flex-1 h-12 flex-col gap-1 rounded-2xl border-2 transition-all duration-200 ${
+                  currentPeriod === 'morning' 
+                    ? 'bg-yellow-100 border-yellow-300 text-yellow-700' 
+                    : 'hover:border-purple-300'
+                }`}
+              >
                 <Sun className="h-4 w-4" />
-              </div>
-              <span className="text-sm font-medium">Morning</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-full ${
-                currentPeriod === 'afternoon' ? 'bg-orange-200' : 'bg-gray-200'
-              }`}>
+                <span className="text-xs font-medium">Morning</span>
+              </Button>
+              <Button
+                variant="outline"
+                className={`flex-1 h-12 flex-col gap-1 rounded-2xl border-2 transition-all duration-200 ${
+                  currentPeriod === 'afternoon' 
+                    ? 'bg-orange-100 border-orange-300 text-orange-700' 
+                    : 'hover:border-purple-300'
+                }`}
+              >
                 <CloudSun className="h-4 w-4" />
-              </div>
-              <span className="text-sm font-medium">Afternoon</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-full ${
-                currentPeriod === 'evening' ? 'bg-indigo-200' : 'bg-gray-200'
-              }`}>
+                <span className="text-xs font-medium">Afternoon</span>
+              </Button>
+              <Button
+                variant="outline"
+                className={`flex-1 h-12 flex-col gap-1 rounded-2xl border-2 transition-all duration-200 ${
+                  currentPeriod === 'evening' 
+                    ? 'bg-indigo-100 border-indigo-300 text-indigo-700' 
+                    : 'hover:border-purple-300'
+                }`}
+              >
                 <Moon className="h-4 w-4" />
-              </div>
-              <span className="text-sm font-medium">Evening</span>
+                <span className="text-xs font-medium">Evening</span>
+              </Button>
             </div>
           </div>
 
@@ -168,8 +189,9 @@ const ActionButtons = ({ onAction, schedule }: ActionButtonsProps) => {
           Quick Actions
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 gap-4">
+      <CardContent className="flex flex-col items-center gap-6 py-8">
+        {/* Top row: Feed and Let Out as big circles */}
+        <div className="flex gap-8 justify-center">
           <ActionDialog
             type="feed"
             icon={Utensils}
@@ -179,20 +201,24 @@ const ActionButtons = ({ onAction, schedule }: ActionButtonsProps) => {
             gradient="bg-gradient-to-r from-green-500 to-emerald-500"
           />
           <ActionDialog
-            type="walk"
-            icon={MapPin}
-            title="Walked"
-            instruction={schedule.instructions.walking}
-            emoji="🚶"
-            gradient="bg-gradient-to-r from-blue-500 to-sky-500"
-          />
-          <ActionDialog
             type="letout"
             icon={Home}
             title="Let Out"
             instruction={schedule.instructions.letout}
             emoji="🏠"
             gradient="bg-gradient-to-r from-orange-500 to-yellow-500"
+          />
+        </div>
+        
+        {/* Bottom row: Walk as smaller circle, centered */}
+        <div className="flex justify-center">
+          <ActionDialog
+            type="walk"
+            icon={MapPin}
+            title="Walk"
+            instruction={schedule.instructions.walking}
+            emoji="🚶"
+            gradient="bg-gradient-to-r from-blue-400 to-sky-400"
           />
         </div>
       </CardContent>
