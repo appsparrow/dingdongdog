@@ -38,6 +38,8 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
 
     setIsLoading(true);
     try {
+      console.log('Attempting login for:', email);
+      
       // Sign in with email and password
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -45,6 +47,7 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
       });
 
       if (authError) {
+        console.error('Auth error:', authError);
         toast({
           title: "Login Failed",
           description: authError.message,
@@ -54,24 +57,15 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
       }
 
       if (authData.user) {
-        // Check if profile exists for this user
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single();
-
-        if (profileError || !profile) {
-          toast({
-            title: "Profile Not Found",
-            description: "No profile found for this user. Please contact an administrator.",
-            variant: "destructive"
-          });
-          await supabase.auth.signOut();
-          return;
-        }
-
-        onLogin(profile);
+        console.log('Auth successful, user ID:', authData.user.id);
+        
+        // The useAuth hook will handle fetching the profile
+        // Just show success message
+        toast({
+          title: "Login Successful",
+          description: "Welcome back!",
+          variant: "default"
+        });
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -125,6 +119,7 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="rounded-2xl border-2 focus:border-purple-300 transition-all duration-200"
+              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
             />
           </div>
 
@@ -135,6 +130,10 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </Button>
+          
+          <div className="text-center text-sm text-gray-500 mt-4">
+            <p>Admin: kiran@dingdongdog.com</p>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -30,8 +30,8 @@ function App() {
     document.head.appendChild(themeColor);
 
     return () => {
-      document.head.removeChild(link);
-      document.head.removeChild(themeColor);
+      if (document.head.contains(link)) document.head.removeChild(link);
+      if (document.head.contains(themeColor)) document.head.removeChild(themeColor);
     };
   }, []);
 
@@ -43,10 +43,11 @@ function App() {
     );
   }
 
+  // Show auth screen if no user or no profile
   if (!user || !profile) {
     return (
       <>
-        <AuthScreen onLogin={() => window.location.reload()} />
+        <AuthScreen onLogin={() => {}} />
         <PWAInstallPrompt />
         <Toaster />
       </>
