@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,8 +19,8 @@ interface Profile {
 
 interface Activity {
   id: string;
-  type: string;
-  time_period: string;
+  type: 'feed' | 'walk' | 'letout';
+  time_period: 'morning' | 'afternoon' | 'evening';
   date: string;
   caretaker_id: string;
   notes?: string;
@@ -66,11 +67,22 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
         .eq('date', today)
         .order('created_at', { ascending: false });
       
-      setActivities(activitiesData || []);
+      // Type the activities data properly
+      const typedActivities: Activity[] = (activitiesData || []).map(activity => ({
+        id: activity.id,
+        type: activity.type as 'feed' | 'walk' | 'letout',
+        time_period: activity.time_period as 'morning' | 'afternoon' | 'evening',
+        date: activity.date,
+        caretaker_id: activity.caretaker_id,
+        notes: activity.notes,
+        created_at: activity.created_at
+      }));
+      
+      setActivities(typedActivities);
 
       // Update completed activities state
       const completed: { [key: string]: boolean } = {};
-      activitiesData?.forEach(activity => {
+      typedActivities.forEach(activity => {
         completed[`${activity.type}-${activity.time_period}-${activity.caretaker_id}`] = true;
       });
       setCompletedActivities(completed);
@@ -88,9 +100,9 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
         .from('activities')
         .insert({
           type,
-          time_period,
+          time_period: timePeriod,
           date: today,
-          caretaker_id
+          caretaker_id: caretakerId
         });
 
       if (error) throw error;
@@ -100,9 +112,9 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
         {
           id: 'temp-' + Math.random(), // Temporary ID
           type,
-          time_period,
+          time_period: timePeriod,
           date: today,
-          caretaker_id,
+          caretaker_id: caretakerId,
           created_at: new Date().toISOString()
         },
         ...prevActivities
