@@ -36,6 +36,8 @@ interface Schedule {
   walking_instruction: string;
   letout_instruction: string;
   letout_count: number;
+  pet_name?: string; // Added pet_name to Schedule interface
+  pet_image_url?: string; // Added pet_image_url to Schedule interface
 }
 
 interface ScheduleTimes {
@@ -63,6 +65,12 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
   }>({ open: false, actionType: null });
   const { toast } = useToast();
   const today = new Date().toISOString().slice(0, 10);
+  const [showAddActivityModal, setShowAddActivityModal] = useState(false);
+  const [showEditActivityModal, setShowEditActivityModal] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  
+  // Default pet image for Zach
+  const defaultPetImageUrl = '/profile-zach.png';
 
   useEffect(() => {
     // Set document title for PWA
@@ -281,30 +289,38 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
         </div>
 
         <div className="max-w-md mx-auto pb-20">
-          {/* Header */}
+          {/* Pet Name Card */}
           <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0 mb-6 mx-6 mt-6">
-            <CardHeader className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Avatar>
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                  <AvatarFallback>{profile.short_name}</AvatarFallback>
-                </Avatar>
-                <div className="space-y-1">
-                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    {profile.name}
-                  </CardTitle>
-                  <p className="text-gray-500">{profile.is_admin ? 'Owner' : 'Caretaker'}</p>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className="flex justify-center mb-3">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center border-2 border-purple-200 overflow-hidden">
+                    <img 
+                      src={schedule?.pet_image_url || defaultPetImageUrl} 
+                      alt="Pet" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const fallback = target.parentElement?.querySelector('.fallback-emoji');
+                        if (fallback) {
+                          (fallback as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                    <div className="w-full h-full bg-gradient-to-r from-purple-100 to-pink-100 flex items-center justify-center text-2xl fallback-emoji" style={{ display: 'none' }}>
+                      🐕
+                    </div>
+                  </div>
                 </div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                  Thanks for taking care of me!
+                </h2>
+                <p className="text-lg font-medium text-gray-700">
+                  {schedule?.pet_name || 'Zach'} {/* Default pet name */}
+                </p>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={() => setShowActivityLog(true)} variant="outline" size="sm" className="rounded-2xl border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200">
-                  Log
-                </Button>
-                <Button onClick={() => setShowSettings(true)} variant="outline" size="sm" className="rounded-2xl border-2 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200">
-                  Settings
-                </Button>
-              </div>
-            </CardHeader>
+            </CardContent>
           </Card>
 
           {/* Schedule */}
@@ -323,42 +339,70 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
           )}
 
           {/* Quick Actions */}
-          <div className="mx-6">
+          {/* <div className="mx-6">
             <QuickActions profiles={profiles} onAction={handleQuickAction} />
+          </div> */}
+
+          {/* User Profile Footer */}
+          <div className="mx-6 mt-8">
+            <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
+              <CardHeader className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                    <AvatarFallback>{profile.short_name}</AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      {profile.name}
+                    </CardTitle>
+                    <p className="text-sm text-gray-500">{profile.is_admin ? 'Owner' : 'Caretaker'}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => setShowActivityLog(true)} variant="outline" size="sm" className="rounded-2xl border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200">
+                    Log
+                  </Button>
+                  <Button onClick={() => setShowSettings(true)} variant="outline" size="sm" className="rounded-2xl border-2 border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200">
+                    Settings
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
           </div>
         </div>
       </div>
 
-        {/* Action Confirmation Dialog */}
-        <ActionConfirmDialog
-          open={confirmDialog.open}
-          onClose={() => setConfirmDialog({ open: false, actionType: null })}
-          onConfirm={handleConfirmAction}
-          actionType={confirmDialog.actionType}
-          profiles={profiles}
-          schedule={schedule}
-          currentUser={profile}
-        />
+      {/* Action Confirmation Dialog */}
+      <ActionConfirmDialog
+        open={confirmDialog.open}
+        onClose={() => setConfirmDialog({ open: false, actionType: null })}
+        onConfirm={handleConfirmAction}
+        actionType={confirmDialog.actionType}
+        profiles={profiles}
+        schedule={schedule}
+        currentUser={profile}
+      />
 
-        {/* Settings Screen - Full Screen Modal */}
-        {showSettings && (
-          <div className="fixed inset-0 z-50">
-            <SetupScreen
-              profile={profile}
-              onClose={() => setShowSettings(false)}
-            />
-          </div>
-        )}
+      {/* Settings Screen - Full Screen Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50">
+          <SetupScreen
+            profile={profile}
+            onClose={() => setShowSettings(false)}
+          />
+        </div>
+      )}
 
-        {/* Activity Log Screen - Full Screen Modal */}
-        {showActivityLog && (
-          <div className="fixed inset-0 z-50">
-            <ActivityLogScreen
-              profile={profile}
-              onClose={() => setShowActivityLog(false)}
-            />
-          </div>
-        )}
+      {/* Activity Log Screen - Full Screen Modal */}
+      {showActivityLog && (
+        <div className="fixed inset-0 z-50">
+          <ActivityLogScreen
+            profile={profile}
+            onClose={() => setShowActivityLog(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };

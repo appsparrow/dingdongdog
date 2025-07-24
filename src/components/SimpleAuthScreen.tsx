@@ -96,7 +96,7 @@ const SimpleAuthScreen = ({ onLogin }: SimpleAuthScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 flex items-center justify-center p-6">
+    <div className="fixed inset-0 bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50 flex items-center justify-center p-6">
       <Card className="w-full max-w-md rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
         <CardHeader className="text-center pb-8">
           <div className="flex justify-center mb-4">
@@ -105,8 +105,7 @@ const SimpleAuthScreen = ({ onLogin }: SimpleAuthScreenProps) => {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            PupCare
-          </CardTitle>
+Ding Dong Dog          </CardTitle>
           <p className="text-gray-500 mt-2">Keep your pup happy</p>
         </CardHeader>
         <CardContent className="space-y-6">

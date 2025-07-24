@@ -180,7 +180,7 @@ const NextScheduled = ({ activities, profiles, schedule, scheduleTimes, onSchedu
                   return (
                     <div
                       key={timePeriod}
-                      className={`flex-1 p-3 rounded-xl text-center transition-all duration-200 cursor-pointer hover:scale-105 ${
+                      className={`flex-1 p-2 rounded-xl text-center transition-all duration-200 cursor-pointer hover:scale-105 ${
                         isTimeCompleted
                           ? 'bg-green-100 border-2 border-green-300'
                           : 'bg-gray-100 border-2 border-gray-200 hover:bg-gray-200'
@@ -194,7 +194,7 @@ const NextScheduled = ({ activities, profiles, schedule, scheduleTimes, onSchedu
                           <img 
                             src={getActivityIconSrc(item.type, isTimeCompleted)} 
                             alt={`${item.type} ${timePeriod}`}
-                            className="w-6 h-6 object-contain"
+                            className="w-8 h-8 object-contain"
                             onError={(e) => {
                               // Fallback to emoji if image fails to load
                               e.currentTarget.style.display = 'none';
