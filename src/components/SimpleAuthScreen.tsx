@@ -164,7 +164,7 @@ Ding Dong Dog          </CardTitle>
                     </div>
                     <div className="text-left">
                       <div className="font-semibold text-gray-800">{profile.name}</div>
-                      <div className="text-sm text-gray-500">{profile.is_admin ? 'Admin' : 'Caretaker'}</div>
+                      {/* <div className="text-sm text-gray-500">{profile.is_admin ? 'Admin' : 'Caretaker'}</div> */}
                     </div>
                   </div>
                 </Button>

@@ -46,7 +46,7 @@ interface ScheduleTimes {
   letout: { [key: string]: boolean };
 }
 
-const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => void }) => {
+const Index = ({ profile, onShowSetup, onLogout }: { profile: Profile; onShowSetup: () => void; onLogout: () => void }) => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [schedule, setSchedule] = useState<Schedule | null>(null);
@@ -104,12 +104,15 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching data for session:', profile.session_code);
+      
       // Fetch profiles
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('*')
         .eq('session_code', profile.session_code);
       
+      console.log('Profiles found:', profilesData);
       setProfiles(profilesData || []);
 
       // Fetch schedule
@@ -119,16 +122,90 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
         .eq('session_code', profile.session_code)
         .single();
       
+      console.log('Schedule found:', scheduleData);
       setSchedule(scheduleData);
 
       // Fetch schedule times
       let scheduleTimesData = null;
-      if (scheduleData) {
+
+      // If no schedule exists, create a default one
+      if (!scheduleData) {
+        console.log('Creating default schedule for session:', profile.session_code);
+        const { data: newSchedule, error: scheduleError } = await supabase
+          .from('schedules')
+          .insert({
+            session_code: profile.session_code,
+            feeding_instruction: 'Feed 1 cup of kibble',
+            walking_instruction: 'Walk for 15 minutes',
+            letout_instruction: 'Let out for potty break',
+            letout_count: 3,
+            pet_name: 'Zach',
+            pet_image_url: '/profile-zach.png'
+          })
+          .select()
+          .single();
+        
+        if (scheduleError) {
+          console.error('Error creating default schedule:', scheduleError);
+        } else {
+          console.log('Default schedule created:', newSchedule);
+          setSchedule(newSchedule);
+          
+          // Create default schedule times
+          const defaultTimes = [
+            { schedule_id: newSchedule.id, activity_type: 'feed', time_period: 'morning', time_of_day: 'morning' },
+            { schedule_id: newSchedule.id, activity_type: 'feed', time_period: 'evening', time_of_day: 'evening' },
+            { schedule_id: newSchedule.id, activity_type: 'walk', time_period: 'afternoon', time_of_day: 'afternoon' },
+            { schedule_id: newSchedule.id, activity_type: 'letout', time_period: 'morning', time_of_day: 'morning' },
+            { schedule_id: newSchedule.id, activity_type: 'letout', time_period: 'afternoon', time_of_day: 'afternoon' },
+            { schedule_id: newSchedule.id, activity_type: 'letout', time_period: 'evening', time_of_day: 'evening' }
+          ];
+          
+          const { data: newTimes, error: timesError } = await supabase
+            .from('schedule_times')
+            .insert(defaultTimes)
+            .select();
+          
+          if (timesError) {
+            console.error('Error creating default schedule times:', timesError);
+          } else {
+            console.log('Default schedule times created:', newTimes);
+            scheduleTimesData = newTimes;
+          }
+        }
+      } else {
+        // Fetch schedule times for existing schedule
         const { data: timesData } = await supabase
           .from('schedule_times')
           .select('*')
           .eq('schedule_id', scheduleData.id);
         scheduleTimesData = timesData;
+        console.log('Schedule times found:', timesData);
+        
+        // If no schedule times exist, create default ones
+        if (!timesData || timesData.length === 0) {
+          console.log('No schedule times found, creating default times for existing schedule');
+          const defaultTimes = [
+            { schedule_id: scheduleData.id, activity_type: 'feed', time_period: 'morning', time_of_day: 'morning' },
+            { schedule_id: scheduleData.id, activity_type: 'feed', time_period: 'evening', time_of_day: 'evening' },
+            { schedule_id: scheduleData.id, activity_type: 'walk', time_period: 'afternoon', time_of_day: 'afternoon' },
+            { schedule_id: scheduleData.id, activity_type: 'letout', time_period: 'morning', time_of_day: 'morning' },
+            { schedule_id: scheduleData.id, activity_type: 'letout', time_period: 'afternoon', time_of_day: 'afternoon' },
+            { schedule_id: scheduleData.id, activity_type: 'letout', time_period: 'evening', time_of_day: 'evening' }
+          ];
+          
+          const { data: newTimes, error: timesError } = await supabase
+            .from('schedule_times')
+            .insert(defaultTimes)
+            .select();
+          
+          if (timesError) {
+            console.error('Error creating default schedule times:', timesError);
+          } else {
+            console.log('Default schedule times created for existing schedule:', newTimes);
+            scheduleTimesData = newTimes;
+          }
+        }
       }
 
       // Build schedule times object
@@ -147,6 +224,7 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
         });
       }
       
+      console.log('Final schedule times object:', times);
       setScheduleTimes(times);
 
       // Fetch today's activities
@@ -390,6 +468,7 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
           <SetupScreen
             profile={profile}
             onClose={() => setShowSettings(false)}
+            onLogout={onLogout}
           />
         </div>
       )}

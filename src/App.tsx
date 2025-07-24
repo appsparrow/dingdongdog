@@ -22,6 +22,10 @@ function App() {
   // Initialize PWA functionality
   usePWA();
 
+  const handleLogout = () => {
+    setProfile(null);
+  };
+
   useEffect(() => {
     // Add manifest link to head
     const link = document.createElement('link');
@@ -65,6 +69,7 @@ function App() {
       <Index 
         profile={profile} 
         onShowSetup={() => {}} 
+        onLogout={handleLogout}
       />
       <PWAInstallPrompt />
       <Toaster />

@@ -36,9 +36,10 @@ interface Schedule {
 interface SetupScreenProps {
   profile: Profile;
   onClose: () => void;
+  onLogout: () => void;
 }
 
-const SetupScreen = ({ profile, onClose }: SetupScreenProps) => {
+const SetupScreen = ({ profile, onClose, onLogout }: SetupScreenProps) => {
   const [newCaretakerName, setNewCaretakerName] = useState('');
   const [newCaretakerShortName, setNewCaretakerShortName] = useState('');
   const [newCaretakerPhone, setNewCaretakerPhone] = useState('');
@@ -398,7 +399,7 @@ const SetupScreen = ({ profile, onClose }: SetupScreenProps) => {
   };
 
   const handleLogout = async () => {
-    await logout();
+    onLogout();
   };
 
   const handlePetImageUpload = async (file: File) => {
