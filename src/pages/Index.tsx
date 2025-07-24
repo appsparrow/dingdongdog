@@ -160,6 +160,8 @@ const Index = ({ profile, onShowSetup }: { profile: Profile; onShowSetup: () => 
       }));
       
       setActivities(typedActivities);
+
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
