@@ -118,6 +118,41 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_times: {
+        Row: {
+          id: string
+          schedule_id: string
+          activity_type: string
+          time_period: string
+          time_of_day: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          schedule_id: string
+          activity_type: string
+          time_period: string
+          time_of_day: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          schedule_id?: string
+          activity_type?: string
+          time_period?: string
+          time_of_day?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_times_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

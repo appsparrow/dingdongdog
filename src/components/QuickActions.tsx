@@ -19,21 +19,25 @@ const QuickActions = ({ profiles, onAction }: QuickActionsProps) => {
       key: 'feed', 
       label: 'Fed', 
       emoji: '🍽️',
-      color: 'bg-green-500 hover:bg-green-600'
+      color: 'bg-gradient-to-r from-green-400 to-green-600'
     },
     { 
       key: 'walk', 
       label: 'Walk', 
       emoji: '🚶',
-      color: 'bg-blue-500 hover:bg-blue-600'
+      color: 'bg-gradient-to-r from-blue-400 to-blue-600'
     },
     { 
       key: 'letout', 
       label: 'Let Out', 
       emoji: '🏠',
-      color: 'bg-orange-500 hover:bg-orange-600'
+      color: 'bg-gradient-to-r from-orange-400 to-orange-600'
     }
   ];
+
+  const getActionIcon = (action: typeof actions[0]) => (
+    <div className="text-4xl">{action.emoji}</div>
+  );
 
   return (
     <Card className="rounded-3xl shadow-xl bg-white/80 backdrop-blur-sm border-0">
@@ -43,19 +47,41 @@ const QuickActions = ({ profiles, onAction }: QuickActionsProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-6">
-          {actions.map((action) => (
+        <div className="space-y-6">
+          {/* Top row - Fed and Let Out (big circles) */}
+          <div className="grid grid-cols-2 gap-4">
             <Button
-              key={action.key}
-              onClick={() => onAction(action.key as 'feed' | 'walk' | 'letout')}
-              className={`h-24 w-full rounded-full ${action.color} text-white text-xl font-bold shadow-lg transition-all duration-200 hover:scale-105`}
+              onClick={() => onAction('feed')}
+              className="h-32 w-full rounded-full bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white text-xl font-bold shadow-lg transition-all duration-200 hover:scale-105"
             >
               <div className="flex flex-col items-center gap-2">
-                <div className="text-3xl">{action.emoji}</div>
-                <span>{action.label}</span>
+                {getActionIcon(actions[0])}
+                <span>Fed</span>
               </div>
             </Button>
-          ))}
+            <Button
+              onClick={() => onAction('letout')}
+              className="h-32 w-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white text-xl font-bold shadow-lg transition-all duration-200 hover:scale-105"
+            >
+              <div className="flex flex-col items-center gap-2">
+                {getActionIcon(actions[2])}
+                <span>Let Out</span>
+              </div>
+            </Button>
+          </div>
+
+          {/* Bottom row - Walk (centered) */}
+          <div className="flex justify-center">
+            <Button
+              onClick={() => onAction('walk')}
+              className="h-32 w-32 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white text-xl font-bold shadow-lg transition-all duration-200 hover:scale-105"
+            >
+              <div className="flex flex-col items-center gap-2">
+                {getActionIcon(actions[1])}
+                <span>Walk</span>
+              </div>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

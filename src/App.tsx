@@ -1,17 +1,23 @@
 
 import { useState, useEffect } from 'react';
 import { Toaster } from '@/components/ui/toaster';
-import { useAuth } from '@/hooks/useAuth';
 import { usePWA } from '@/hooks/usePWA';
-import AuthScreen from '@/components/AuthScreen';
-import SetupScreen from '@/components/SetupScreen';
+import SimpleAuthScreen from '@/components/SimpleAuthScreen';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import Index from '@/pages/Index';
 import './App.css';
 
+interface Profile {
+  id: string;
+  name: string;
+  short_name: string;
+  session_code: string;
+  is_admin: boolean;
+}
+
 function App() {
-  const { user, profile, isLoading } = useAuth();
-  const [showSetup, setShowSetup] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Initialize PWA functionality
   usePWA();
@@ -43,24 +49,11 @@ function App() {
     );
   }
 
-  // Show auth screen if no user or no profile
-  if (!user || !profile) {
+  // Show auth screen if no profile
+  if (!profile) {
     return (
       <>
-        <AuthScreen onLogin={() => {}} />
-        <PWAInstallPrompt />
-        <Toaster />
-      </>
-    );
-  }
-
-  if (showSetup) {
-    return (
-      <>
-        <SetupScreen 
-          profile={profile} 
-          onClose={() => setShowSetup(false)} 
-        />
+        <SimpleAuthScreen onLogin={setProfile} />
         <PWAInstallPrompt />
         <Toaster />
       </>
@@ -71,7 +64,7 @@ function App() {
     <>
       <Index 
         profile={profile} 
-        onShowSetup={() => setShowSetup(true)} 
+        onShowSetup={() => {}} 
       />
       <PWAInstallPrompt />
       <Toaster />
