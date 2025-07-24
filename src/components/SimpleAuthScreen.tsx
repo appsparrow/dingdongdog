@@ -134,8 +134,8 @@ Ding Dong Dog          </CardTitle>
           </Button>
           
           <div className="text-center text-sm text-gray-500 mt-4">
-            <p>Admin: Use session code | User: Use last 4 digits of phone</p>
-            <p className="mt-1">Demo: Admin 8280 | User 1234</p>
+            <p> User: Use last 4 digits of phone</p>
+            
           </div>
         </CardContent>
       </Card>
