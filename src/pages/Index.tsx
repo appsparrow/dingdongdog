@@ -434,7 +434,7 @@ const Index = ({ profile, onShowSetup, onLogout }: { profile: Profile; onShowSet
                     <CardTitle className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                       {profile.name}
                     </CardTitle>
-                    <p className="text-sm text-gray-500">{profile.is_admin ? 'Owner' : 'Caretaker'}</p>
+                    {/* <p className="text-sm text-gray-500">{profile.is_admin ? 'Owner' : 'Caretaker'}</p> */}
                   </div>
                 </div>
                 <div className="flex gap-2">
